@@ -4,7 +4,9 @@ author: "Cesar Poggi"
 date: '2022-09-11'
 output: html_document
 ---
+
 LEER Y GUARDAR DATOS
+
 ```{r}
 Base100 = read_sav("Enaho01-2016-200.sav")
 write_sav(Base100, "Enaho01-2021-100res.sav")
@@ -14,8 +16,8 @@ write.csv(df,"C:\\Users\\Ron\\Desktop\\Test\\People.csv", row.names = FALSE)
 #Guardar bases en csv
 ```
 
-
 LIMPIAR DATOS
+
 ```{r}
 MiembroFamilia$UBIGEO <- gsub("[[:space:]]","0",MiembroFamilia$VIVIENDA)
 #Para reemplazar el espacio vacio u otro caracter con otro caracter
@@ -24,12 +26,25 @@ X20XXpan$P601A =trimws(X20XXpan$P601A,which=c("left"),whitespace = "[\\h\\v]")
 #Para eliminar el espacio en blanco seleccionando si es al principio o final del string
 
 X2021TODO01P1$P601B <- as.factor(X2021TODO01P1$P601B)
-#Convertir variable a factor
+
+categoricals=c("SEX","RACE","SES","SCTYP","HSP","CAR")
+data[,categoricals]=lapply(data[,categoricals], as.factor)
+#Convertir variable a factor. La segunda opción permite escoger mayor cantidad de variables primero convirtiendolas en un objeto de selección. Intentar sin la coma dentro del paréntesis y ver si con solo el número de la columan se puede aplicar.
 
 levels(X2021TODO01P1$P601B) <- c("Si", "No")
 
 X2021TODO01P1$P601A <- recode_factor(X2021TODO01P1$P601A, `0101` = "Pan Corriente o Comun", `0102` = "Pan Tolete", `0103` = "Pan Frances" , `0104` = "Pan Chapla" , `0105` = "Pan Integral" , `0106` = "Pan de Molde Envasado" , `0107` = "Pan de Yema")
 #Agregar nombres a los niveles de un factor. Una opción te permite hacerlo de frente según el orden predeterminado. La segunda opción te permite especificar el nivel y ponerles un nombre específico.
+
+hsb$SEX=factor(hsb$SEX,
+                levels=c(1,2),
+                labels=c("Male","Female"))
+#Convertir a variables a un factor y a su vez ponerle niveles y nombres a estos.
+
+hsb$SES=ordered(hsb$SES,
+                levels=c(1,2,3),
+                labels=c("Low","Medium","High" ))
+#Lo mismo que lo anterior pero para factores ordenados
 
 
 label(X2021TODO01P1$P601B) = c("Obtuvo el producto")
@@ -37,6 +52,7 @@ label(X2021TODO01P1$P601B) = c("Obtuvo el producto")
 ```
 
 SELECCIONAR Y EXTRAER CARACTERES Y STRINGS
+
 ```{r}
 X2006TODO01 = X20XXpan[grep("01..", X20XXpan$P601A, perl=TRUE),]
 #Para seleccionar todos los casos que tengan "xx.." en una determinada variable. Los puntos representan cualquier caracter y se usan para determinar el orden en el que debe de estar los caracteres que sí se escriben. Si no se añaden los puntos, los caracteres sí escritos (en este caso xx) se identificarán de cualquier parte de un string.
@@ -53,6 +69,7 @@ panPRIMERO$I601Z2 <- rowSums(panPRIMERO[,c("I601B2", "I601D2")], na.rm=TRUE)
 ```
 
 VER DATOS Y TABLAS EN BASE A CIERTOS CRITERIOS
+
 ```{r}
 panPRIMERO[with(panPRIMERO, is.na(I601B2) & is.na(I601D2)),] 
 
@@ -74,6 +91,7 @@ PANxFAM$DOM3 = ifelse(PANxFAM$DOMINIO == "Sierra Centro" | PANxFAM$DOMINIO == "S
 ```
 
 MERGE Y PROBLEMAS RELACIONADOS AL MERGE
+
 ```{r}
 PANxFAM=merge(PANxFAM, Base100, by = c("CONGLOME", "VIVIENDA", "HOGAR", "UBIGEO", "ESTRATO"))
 #hacer merge de bases según varias columnas, también se puede usar argumentos como all.x, all.y, by.x, by.y
@@ -83,6 +101,7 @@ setdiff(PANxFAM,PANxFAM1)
 ```
 
 ESTADISTICAS CON PONDERACIÓN
+
 ```{r}
 dessin1<- svydesign(id = ~1, #no clusters 
                       data = PANxFAM,
@@ -119,4 +138,17 @@ datoB %>%
   as_flex_table() %>%
   flextable::save_as_docx(path = "C:\\Users\\Alejandro\\Desktop\\PULSO - Cuanti Desk\\Proyecto Panadería\\PANprimeroxConsumPerCapxDomEstr\\medidaspre2.docx")
 #Para exportar una tabla gt_summary a un word
+```
+
+MEDIDAS
+
+```{r}
+f1=formula(~MATH + WRTG)
+#Usada generalente para establecer relaciones entre varaibles y aplicar a regresiones (lineas, poisson, estadística, etc.). Lo que viene seguido del ~ es la varaible dependiente y el resto depues del + son las varaibles dependientes. Se puede poner varias.
+
+pearsonf1=cor.test(f1,data=hsb)[c('estimate','p.value')]
+#el cor.test sin un "method" especificado automaticamente asumirá que la data con la cual trabajamos es paramétrica, es decir que no está basado en una distribución normal.
+
+spearmanf1=cor.test(f1,data=hsb,method='spearman')[c('estimate','p.value')]
+#si en el cor.test se especifica el method con "spearman" quiere decir que la data con la que trabajamos no es paramétrica.
 ```

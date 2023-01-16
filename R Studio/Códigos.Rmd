@@ -14,11 +14,35 @@ write_sav(Base100, "Enaho01-2021-100res.sav")
 
 write.csv(df,"C:\\Users\\Ron\\Desktop\\Test\\People.csv", row.names = FALSE)
 #Guardar bases en csv
+
+ls()
+#Ver todos los objetos creados
+
+rm( x , y )
+#Remover objetos creados
+
+rm(ls())
+#Remover todos los objetos creados
+
+x <- matrix( data = c( 1, 2, 3, 4, 5, NA), nrow = 2,  ncol = 3 )
+#crear un matrix. El número de columnas por el número de filas debe coincidir con la cantidad de items dentro del vector
+
+matrix( c(1:4) , 2 , 2 , byrow = TRUE)
+#Normalmente la matríz se rellena completando las columnas, pero con este comendo podemos especificar que crezca por columna
+
+set.seed(XXX)
+#Nos ayuda a reproducir los mismos datos random. Se tiene que cargar antes de hacer otras operaciones y calculos.
 ```
 
 LIMPIAR DATOS
 
 ```{r}
+which(is.na(data$horsepower))
+#Detectar NAs
+
+data <- na.omit(data)
+#Eliminar NAs de una base
+
 MiembroFamilia$UBIGEO <- gsub("[[:space:]]","0",MiembroFamilia$VIVIENDA)
 #Para reemplazar el espacio vacio u otro caracter con otro caracter
 
@@ -81,6 +105,8 @@ MiembroFamAGGRE = aggregate(P204 ~ CONGLOME + VIVIENDA + HOGAR, data = MiembroFa
 #Para crear una table que haga un calculo estadistico (suma, media, variación, etc.) en base a una varaible que se pone primero y luego se ordena en base a las demas variables especificadas
 ```
 
+IF ELSE
+
 ```{r}
 PANxFAM$DomEstr = ifelse(PANxFAM$DOM3 == "1" & PANxFAM$ESTRATO2 == "1", 1,
                          ifelse(PANxFAM$DOM3 == "1" & PANxFAM$ESTRATO2 == "2", 2,0))
@@ -98,6 +124,16 @@ PANxFAM=merge(PANxFAM, Base100, by = c("CONGLOME", "VIVIENDA", "HOGAR", "UBIGEO"
 
 setdiff(PANxFAM,PANxFAM1)
 #Para comprobar que filas hay en una base de datos que no hay en otra. Columnas deben ser iguales.
+```
+
+ESTADÍSTICAS GENERALES
+
+```{r}
+sqrt(x)
+#Nos da la raíz cuadrada de cada elemento de la matríz
+
+x^3
+#Eleva cada elemento de la matríz a la 3
 ```
 
 ESTADISTICAS CON PONDERACIÓN
@@ -151,4 +187,23 @@ pearsonf1=cor.test(f1,data=hsb)[c('estimate','p.value')]
 
 spearmanf1=cor.test(f1,data=hsb,method='spearman')[c('estimate','p.value')]
 #si en el cor.test se especifica el method con "spearman" quiere decir que la data con la que trabajamos no es paramétrica.
+```
+
+RANDOMIZACIÓN
+
+```{r}
+x <- rnorm( 50, mean = 50, sd = .1 )
+#Forma un objeto con 50 variables numericas random. Además, podemos especificar su media y su deviación estandar. Aunque no es encesario.
+
+x <- seq( 0 , 1 , length = 10 )
+#Forma un objeto con 10 variables numericas entre el 0 y el 1
+```
+
+GRAFICOS
+
+```{r}
+pdf( "plot1.pdf")
+jpeg( "plot1.jpeg")
+png( "plot1.png")
+#Guardar gráficos de ggplot
 ```

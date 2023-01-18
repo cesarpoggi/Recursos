@@ -5,15 +5,28 @@ date: '2022-09-11'
 output: html_document
 ---
 
-LEER Y GUARDAR DATOS
+LEER Y GUARDAR DATOS, Y ENVIROMENT
 
 ```{r}
 Base100 = read_sav("Enaho01-2016-200.sav")
 write_sav(Base100, "Enaho01-2021-100res.sav")
-#Leer y guardar bases en .sav
+#Leer y guardar bases en .sav. HAVEN.
+
+datanueva=import("muertes_acumuladas3.0.csv", encoding = 'UTF-8')
+#Leer bases csv. RIO.
 
 write.csv(df,"C:\\Users\\Ron\\Desktop\\Test\\People.csv", row.names = FALSE)
-#Guardar bases en csv
+#Guardar bases en csv. UTILS.
+
+datoB %>%
+  as_flex_table() %>%
+  flextable::save_as_docx(path = "C:\\Users\\Alejandro\\Desktop\\PULSO - Cuanti Desk\\Proyecto Panadería\\PANprimeroxConsumPerCapxDomEstr\\medidaspre2.docx")
+#Para exportar una tabla gt_summary a un word. GTSUMMARY.
+
+pdf( "plot1.pdf")
+jpeg( "plot1.jpeg")
+png( "plot1.png")
+#Guardar gráficos de ggplot
 
 ls()
 #Ver todos los objetos creados
@@ -24,37 +37,92 @@ rm( x , y )
 rm(ls())
 #Remover todos los objetos creados
 
-x <- matrix( data = c( 1, 2, 3, 4, 5, NA), nrow = 2,  ncol = 3 )
-#crear un matrix. El número de columnas por el número de filas debe coincidir con la cantidad de items dentro del vector
-
-matrix( c(1:4) , 2 , 2 , byrow = TRUE)
-#Normalmente la matríz se rellena completando las columnas, pero con este comendo podemos especificar que crezca por columna
-
 set.seed(XXX)
 #Nos ayuda a reproducir los mismos datos random. Se tiene que cargar antes de hacer otras operaciones y calculos.
 ```
 
-LIMPIAR DATOS
+
+CREAR MATRICES DESDE CERO
 
 ```{r}
-which(is.na(data$horsepower))
+x <- matrix( data = c(1,2,3,4,5,NA), nrow = 2,  ncol = 3 )
+#crear un matrix. El número de columnas por el número de filas debe coincidir con la cantidad de items dentro del vector
+
+matrix(c(1:4), 2, 2, byrow = TRUE)
+#Normalmente la matríz se rellena completando las columnas, pero con este comendo podemos especificar que crezca por columna
+```
+
+
+COLUMNAS Y FILAS
+
+```{r}
+data[,c(1,4,6:9,10,14,16:22)]
+#Seleccionar filas. Con este código también podemos eliminar los elementos especificados con NULL o poniendo un "-" antes de la c.
+
+data[c(1,4,6:9,10,14,16:22),]
+#Seleccionar filas. Con este código también podemos eliminar los elementos especificados con NULL o poniendo un "-" antes de la c.
+
+colnames(dataCASOSACU)[c(6)]<-c("LatinAmerica")
+#Cambiar nombre de columnas
+
+panPRIMERO$I601Z2 <- rowSums(panPRIMERO[,c("I601B2", "I601D2")], na.rm=TRUE)
+#Para sumar filas en una nueva columna e ignorar los NAs considerandolos como 0
+
+data <- data %>%
+  adorn_totals("row")
+#Agregar fila o columna de total al dataframe. JANITOR.
+```
+
+
+NAs
+
+```{r}
+which(is.na(data$variable))
 #Detectar NAs
 
 data <- na.omit(data)
 #Eliminar NAs de una base
+```
+
+
+ELIMINACIÓN A REEMPLAZO DE CARACTERES
+
+```{r}
+X20XXpan$P601A =trimws(X20XXpan$P601A,which=c("left"),whitespace = "[\\h\\v]")
+#Para eliminar el espacio en blanco seleccionando si es al principio o final del string
 
 MiembroFamilia$UBIGEO <- gsub("[[:space:]]","0",MiembroFamilia$VIVIENDA)
 #Para reemplazar el espacio vacio u otro caracter con otro caracter
 
-X20XXpan$P601A =trimws(X20XXpan$P601A,which=c("left"),whitespace = "[\\h\\v]")
-#Para eliminar el espacio en blanco seleccionando si es al principio o final del string
+data[]<-lapply(data, function(x) 
+  (gsub("\\Ñ|\\+", "", (x))))
+#Igual que el anterior. Para reemplazar ciertos tipos de caracteres (puede ser más de uno) con otro caracter mediante una función de R (creada con el comando function). Además, es necesario que el nombre del data frame tenga los [] puestos ya que indica que la función se aplicará a todas las columnas. En la segunda linea creamos la función.
+```
 
+
+TRANSFORMACIÓN DE TIPO DE VARIABLE
+
+```{r}
 X2021TODO01P1$P601B <- as.factor(X2021TODO01P1$P601B)
 
 categoricals=c("SEX","RACE","SES","SCTYP","HSP","CAR")
 data[,categoricals]=lapply(data[,categoricals], as.factor)
 #Convertir variable a factor. La segunda opción permite escoger mayor cantidad de variables primero convirtiendolas en un objeto de selección. Intentar sin la coma dentro del paréntesis y ver si con solo el número de la columan se puede aplicar.
 
+data[,c(3:15)] <- sapply(data[c(3:15)],as.numeric)
+#Convertir una variable a numerica seleccionando las columnas
+
+data$fecha <- as.Date(data$fecha, '%d/%m/%Y')
+#Convertir una variable a formato fecha
+
+label(X2021TODO01P1$P601B) = c("Obtuvo el producto")
+#Cambiar la etiqueta de una variable
+```
+
+
+FACTORES Y NIVELES DE UN FACTOR
+
+```{r}
 levels(X2021TODO01P1$P601B) <- c("Si", "No")
 
 X2021TODO01P1$P601A <- recode_factor(X2021TODO01P1$P601A, `0101` = "Pan Corriente o Comun", `0102` = "Pan Tolete", `0103` = "Pan Frances" , `0104` = "Pan Chapla" , `0105` = "Pan Integral" , `0106` = "Pan de Molde Envasado" , `0107` = "Pan de Yema")
@@ -69,52 +137,49 @@ hsb$SES=ordered(hsb$SES,
                 levels=c(1,2,3),
                 labels=c("Low","Medium","High" ))
 #Lo mismo que lo anterior pero para factores ordenados
-
-
-label(X2021TODO01P1$P601B) = c("Obtuvo el producto")
-#Cambiar la etiqueta de una variable
 ```
 
-SELECCIONAR Y EXTRAER CARACTERES Y STRINGS
+
+SELECCIÓN, FILTRO Y EXTRACCIÓN DE CASOS SEGÚN CRITERIO
 
 ```{r}
 X2006TODO01 = X20XXpan[grep("01..", X20XXpan$P601A, perl=TRUE),]
-#Para seleccionar todos los casos que tengan "xx.." en una determinada variable. Los puntos representan cualquier caracter y se usan para determinar el orden en el que debe de estar los caracteres que sí se escriben. Si no se añaden los puntos, los caracteres sí escritos (en este caso xx) se identificarán de cualquier parte de un string.
+#Para seleccionar todos los casos que tengan "xx.." en una determinada variable. Los puntos representan cualquier caracter y se usan para determinar el orden en el que debe de estar los caracteres que sí se escriben. Si no se añaden los puntos, los caracteres sí escritos (en este caso xx) se identificarán de cualquier parte de la unidad-
 
 panPRIMERO <- panPRIMERO %>%
   filter(P601B == 1)
 #Para filtrar segun los valores de una columna
 
-PANxFAM$UBIGEO2=substr(PANxFAM$UBIGEO, 1, 2)
+PANxFAM$var2=substr(PANxFAM$var1, 1, 2)
 #Para extraer los caracteres 1 y 2 de un string y ponerlos en otra columna
-
-panPRIMERO$I601Z2 <- rowSums(panPRIMERO[,c("I601B2", "I601D2")], na.rm=TRUE)
-#Para sumar filas en una nueva columna e ignorar los NAs considerandolos como 0
 ```
 
-VER DATOS Y TABLAS EN BASE A CIERTOS CRITERIOS
+
+DISPLAY DE TABLAS  O DATA SEGÚN CRITERIOS
 
 ```{r}
 panPRIMERO[with(panPRIMERO, is.na(I601B2) & is.na(I601D2)),] 
 
 panPRIMERO %>%
   filter(!if_all(c(I601B2, I601D2), is.na))
-#Ver casos que tienen NA tanto en una variable como en otra, si agregamos un "!" antes del with hace lo contrario: aquellos que no tienen NA en ambas columnas (pero sí puede ser en una columna)
+#Ver casos que tienen NA tanto en una variable como en otra, si agregamos un "!" antes del with o del "if_all" hace lo contrario: aquellos que no tienen NA en ambas columnas (pero sí puede ser en una columna)
 
 MiembroFamAGGRE = aggregate(P204 ~ CONGLOME + VIVIENDA + HOGAR, data = MiembroFamFILTR,sum)
-#Para crear una table que haga un calculo estadistico (suma, media, variación, etc.) en base a una varaible que se pone primero y luego se ordena en base a las demas variables especificadas
+#Para crear una tabla que haga un calculo estadistico (suma, media, variación, etc.) a una variable que se pone primero (en el código) y luego se ordena en el output en base a las demas variables especificadas.
 ```
+
 
 IF ELSE
 
 ```{r}
 PANxFAM$DomEstr = ifelse(PANxFAM$DOM3 == "1" & PANxFAM$ESTRATO2 == "1", 1,
                          ifelse(PANxFAM$DOM3 == "1" & PANxFAM$ESTRATO2 == "2", 2,0))
-#Condicionante Y de ifelse
+#Condicionante "Y" de ifelse
 
 PANxFAM$DOM3 = ifelse(PANxFAM$DOMINIO == "Sierra Centro" | PANxFAM$DOMINIO == "Sierra Sur", 2,0)
-#Condicionante O de ifelse
+#Condicionante "O" de ifelse
 ```
+
 
 MERGE Y PROBLEMAS RELACIONADOS AL MERGE
 
@@ -123,26 +188,17 @@ PANxFAM=merge(PANxFAM, Base100, by = c("CONGLOME", "VIVIENDA", "HOGAR", "UBIGEO"
 #hacer merge de bases según varias columnas, también se puede usar argumentos como all.x, all.y, by.x, by.y
 
 setdiff(PANxFAM,PANxFAM1)
-#Para comprobar que filas hay en una base de datos que no hay en otra. Columnas deben ser iguales.
+#Para comprobar que filas hay en una base de datos que no hay en otra. Columnas deben ser iguales. DPLYR.
 ```
 
-ESTADÍSTICAS GENERALES
 
-```{r}
-sqrt(x)
-#Nos da la raíz cuadrada de cada elemento de la matríz
-
-x^3
-#Eleva cada elemento de la matríz a la 3
-```
-
-ESTADISTICAS CON PONDERACIÓN
+TABLAS PONDERADAS
 
 ```{r}
 dessin1<- svydesign(id = ~1, #no clusters 
                       data = PANxFAM,
                       weight = ~FACTOR07)
-#Para crear el diseño necesario para tbl_svysummary, en weights ponemos el factor de ponderación
+#Para crear el diseño necesario para tbl_svysummary, en weights ponemos el factor de ponderación. SURVEY. GTSUMMARY.
 
 datoF = tbl_svysummary(data= dessin1, by= DOMINIO, 
                include = c(I601Z2), 
@@ -153,8 +209,7 @@ datoB = tbl_svysummary(data= dessin1.5, by= P601A,
                include = c(P601B), 
                statistic = list(all_categorical() ~ "{n} ({p}%)"),#cantidad y porcentaje
                digits = list(P601B ~ c(0, 1)), missing = "no") #decimales específicados y sin missing
-#Crear un objeto tbl_svysummary nos permite calcular diferentes estadisticos de una variable en base a un diseño de encuesta/ponderación que nos permite introducir un factor de ponderación que afectará a los casos y en base a este sacará los estadisticos que solicitemos. Ademas podemos cruzar con otra variable. Además podemos especificar la cantidad de decimales para cada uno de los estadísticos
-
+#Crear un objeto tbl_svysummary nos permite calcular diferentes estadisticos de una variable en base a un diseño de encuesta/ponderación que nos permite introducir un factor de ponderación que afectará a los casos y en base a este sacará los estadisticos que solicitemos. Ademas podemos cruzar con otra variable. Además podemos especificar la cantidad de decimales para cada uno de los estadísticos. SURVEY. GTSUMMARY.
 
 datoC <- 
   dessin1.7 %>% 
@@ -167,43 +222,47 @@ datoC <-
         include = c(P601B),
         statistic = list(all_continuous() ~ "{mean} ({sd})"), 
         digits = list(all_continuous() ~ c(2, 2)), missing = "no"))
-#Parte del paquete gtsummary nos permite crear una tabla estratificada por una categoria superior y otra por la cual se divide, además de permitirnos cruzar con otras variables.
-
-
-datoB %>%
-  as_flex_table() %>%
-  flextable::save_as_docx(path = "C:\\Users\\Alejandro\\Desktop\\PULSO - Cuanti Desk\\Proyecto Panadería\\PANprimeroxConsumPerCapxDomEstr\\medidaspre2.docx")
-#Para exportar una tabla gt_summary a un word
+#Parte del paquete gtsummary nos permite crear una tabla estratificada por una categoria superior y otra por la cual se divide, además de permitirnos cruzar con otras variables. SURVEY. GTSUMMARY.
 ```
 
-MEDIDAS
+
+MEDIDAS ESTADISTICAS, REGRESIONES, CORRELACIÓN, ETC.
 
 ```{r}
 f1=formula(~MATH + WRTG)
-#Usada generalente para establecer relaciones entre varaibles y aplicar a regresiones (lineas, poisson, estadística, etc.). Lo que viene seguido del ~ es la varaible dependiente y el resto depues del + son las varaibles dependientes. Se puede poner varias.
+#Usada generalente para establecer relaciones entre varaibles y aplicar a regresiones (lineas, poisson, estadística, etc.). Lo que viene seguido del ~ es la varaible dependiente y el resto depues del + son las varaibles dependientes. Se puede poner varias. STATS.
 
 pearsonf1=cor.test(f1,data=hsb)[c('estimate','p.value')]
-#el cor.test sin un "method" especificado automaticamente asumirá que la data con la cual trabajamos es paramétrica, es decir que no está basado en una distribución normal.
+#el cor.test sin un "method" especificado automaticamente asumirá que la data con la cual trabajamos es paramétrica, es decir que no está basado en una distribución normal. STATS.
 
 spearmanf1=cor.test(f1,data=hsb,method='spearman')[c('estimate','p.value')]
-#si en el cor.test se especifica el method con "spearman" quiere decir que la data con la que trabajamos no es paramétrica.
+#si en el cor.test se especifica el method con "spearman" quiere decir que la data con la que trabajamos no es paramétrica. STATS.
 ```
+ 
 
 RANDOMIZACIÓN
 
 ```{r}
 x <- rnorm( 50, mean = 50, sd = .1 )
-#Forma un objeto con 50 variables numericas random. Además, podemos especificar su media y su deviación estandar. Aunque no es encesario.
+#Forma un objeto con 50 variables numericas random. Además, podemos especificar su media y su deviación estandar. Aunque no es encesario. STATS.
 
 x <- seq( 0 , 1 , length = 10 )
 #Forma un objeto con 10 variables numericas entre el 0 y el 1
 ```
 
-GRAFICOS
+
+GRÁFICOS
 
 ```{r}
-pdf( "plot1.pdf")
-jpeg( "plot1.jpeg")
-png( "plot1.png")
-#Guardar gráficos de ggplot
+fig <- plot_ly(dataCASOSACU, type = 'scatter', mode = 'lines', stackgroup = 'one')%>%
+  add_trace(x = ~Date, y = ~VARIABLE1, name = 'Variable 1', line = list(color = 'rgb(247,247,247)', width = 4))%>%
+  add_trace(x = ~Date, y = ~VARAIBLE2, name = 'Variable 2', line = list(color = 'rgb(37,37,37)', width = 4))%>%
+  layout(showlegend = T)
+#Para crear gráficos de linea de dos variables con leyenda (de alguna de las dos variables). PLOTLY.
+
+fig <- fig %>% layout(yaxis = list(title = 'Muertes de Covid-19 (a 11 de Agosto 2022)'))
+fig <- fig %>% layout(xaxis = list(title = 'Fecha'))
+fig <- fig %>% layout(showlegend = TRUE, legend = list(font = list(size = 15)))
+fig
+#Complemento del anterior. También puede ser insertado dentro del código anterior. Para poner títulos a las axis y editar el layout de la leyenda. PLOTLY.
 ```

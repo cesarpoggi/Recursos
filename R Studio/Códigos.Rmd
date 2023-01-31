@@ -42,7 +42,7 @@ set.seed(XXX)
 ```
 
 
-CREAR MATRICES DESDE CERO
+CREAR MATRICES, OBSERVACIONES Y OTROS DESDE CERO
 
 ```{r}
 x <- matrix( data = c(1,2,3,4,5,NA), nrow = 2,  ncol = 3 )
@@ -50,6 +50,12 @@ x <- matrix( data = c(1,2,3,4,5,NA), nrow = 2,  ncol = 3 )
 
 matrix(c(1:4), 2, 2, byrow = TRUE)
 #Normalmente la matríz se rellena completando las columnas, pero con este comendo podemos especificar que crezca por columna
+
+X <- seq(from = 0, to = 20, by = 0.1)
+#Crea una secuencia(seq) de números. Tiene la posibilidad de especificar la distancia entre los datos
+
+X <- rnorm(length(X), mean = 10, sd = 100)
+#Genera un objeto de longitud X de números aleatorios, permite especificar la media de todos los datos y su desvicación estandar.
 ```
 
 
@@ -232,11 +238,29 @@ MEDIDAS ESTADISTICAS, REGRESIONES, CORRELACIÓN, ETC.
 f1=formula(~MATH + WRTG)
 #Usada generalente para establecer relaciones entre varaibles y aplicar a regresiones (lineas, poisson, estadística, etc.). Lo que viene seguido del ~ es la varaible dependiente y el resto depues del + son las varaibles dependientes. Se puede poner varias. STATS.
 
+model1 <- lm(y ~ X, data=data) 
+#Se usa para generar modelos líneales
+
+model2 <- lm(y ~ X + I(X^2) + I(X^3) + I(X^4) + 
+                     I(X^5),
+             data=data)
+#Se usa para generar modelos lineales polinómicos
+
+model3 <- smooth.spline(X, y, df=200) #more complexity
+#Se usa para generar modelos no paramétricos
+
 pearsonf1=cor.test(f1,data=hsb)[c('estimate','p.value')]
 #el cor.test sin un "method" especificado automaticamente asumirá que la data con la cual trabajamos es paramétrica, es decir que no está basado en una distribución normal. STATS.
 
 spearmanf1=cor.test(f1,data=hsb,method='spearman')[c('estimate','p.value')]
 #si en el cor.test se especifica el method con "spearman" quiere decir que la data con la que trabajamos no es paramétrica. STATS.
+
+rmse = function(actual, predicted) {
+                sqrt(mean((actual - predicted) ^ 2))
+}
+#formula para hallar el Error Cuadrático Medio (RMSE). Nos indica qué tan alejado está la línea del valor real. Es el standart deviation de los residuals.
+#Para usarlo necesitas los valores reales del dataset y los valores predichos (lo quen nos dá el "fitted" del modelo). Para obtner los valores predichos se necesita leer el modelo con la función "fitted". Se suele utilizar para estimar que tánto explica el modelo en relación a los datos disponibles. Probar con muestra de la muestra de entrenamiento y prueba/testeo. La que cuenta es la última ya que son datos no vistos y le modelo busca predecir. 
+
 ```
  
 
@@ -255,14 +279,32 @@ GRÁFICOS
 
 ```{r}
 fig <- plot_ly(dataCASOSACU, type = 'scatter', mode = 'lines', stackgroup = 'one')%>%
-  add_trace(x = ~Date, y = ~VARIABLE1, name = 'Variable 1', line = list(color = 'rgb(247,247,247)', width = 4))%>%
-  add_trace(x = ~Date, y = ~VARAIBLE2, name = 'Variable 2', line = list(color = 'rgb(37,37,37)', width = 4))%>%
+  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'rgb(247,247,247)', width = 4))%>%
+  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'rgb(37,37,37)', width = 4))%>%
   layout(showlegend = T)
-#Para crear gráficos de linea de dos variables con leyenda (de alguna de las dos variables). PLOTLY.
+#Para crear gráficos de linea de dos variables con leyenda. PLOTLY.
 
+fig1 <- plot_ly(y = dataP$survey_mins1, name = "TRACE 0",  type = "box") %>%
+  add_trace(y = dataP$`QUEJAS/survey_mins4`, name = "TRACE 1",  type = "box" ) %>%
+#Para crear gráficos de caja de una varaible. PLOTLY.
+  
 fig <- fig %>% layout(yaxis = list(title = 'Muertes de Covid-19 (a 11 de Agosto 2022)'))
 fig <- fig %>% layout(xaxis = list(title = 'Fecha'))
 fig <- fig %>% layout(showlegend = TRUE, legend = list(font = list(size = 15)))
-fig
 #Complemento del anterior. También puede ser insertado dentro del código anterior. Para poner títulos a las axis y editar el layout de la leyenda. PLOTLY.
+
+fig <- fig %>% layout(autosize = F, width = 900, height = 500)
+#Complemento que nos ayuda a dar forma al lienzo del plot. PLOTLY.
+
+fig <- fig %>% layout(barmode = "overlay")
+#Usado para grafico de barras superpuestas o histogramas. Generalmente al final del plot.
+  
+fig1 <- plot_ly(alpha = 0.7) %>% 
+#Usado en graficos superpuestos para ver la intensidad del color. Al principio del plot. PLOTLY.
+  
+plot(X, y, col='deepskyblue4', xlab='X label', main='Datos & DGM')
+#Nos da un gráfico de puntos (plots), se puede cambiar el nombre de la variable y el título
+
+lines(X, y, col='firebrick1', lwd=4) #DGM in red  
+#Nos da un gráfico de linrs, se puede cambiar el nombre de la variable y especificar el ancho de la línea.
 ```

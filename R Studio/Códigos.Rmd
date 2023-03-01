@@ -18,10 +18,23 @@ datanueva=import("muertes_acumuladas3.0.csv", encoding = 'UTF-8')
 write.csv(df,"C:\\Users\\Ron\\Desktop\\Test\\People.csv", row.names = FALSE)
 #Guardar bases en csv. UTILS.
 
+ASE <- read_excel("ASE_OG.xls", sheet = "Base", skip = 2)
+#Leer xls podiendo seleccionar las hojas y podiendo omitir las primeras columnas. READXL.
+
 datoB %>%
   as_flex_table() %>%
   flextable::save_as_docx(path = "C:\\Users\\Alejandro\\Desktop\\PULSO - Cuanti Desk\\Proyecto Panadería\\PANprimeroxConsumPerCapxDomEstr\\medidaspre2.docx")
 #Para exportar una tabla gt_summary a un word. GTSUMMARY.
+
+"B20XX" <- "https://github.com/cesarpoggi/ProyectoPAN/blob/main/X2021BeginWith01.rda?raw=true"
+"C2021" <- "https://github.com/cesarpoggi/ProyectoPAN/blob/main/Enaho01-2021-100res.sav?raw=true"
+fromGit = B20XX
+load(url(fromGit))
+#Cargar data desde GitHub para rda
+
+fromGit <- C2021 
+Base100 = read_sav(fromGit)
+#Cargar data desde GitHub para sav
 
 pdf( "plot1.pdf")
 jpeg( "plot1.jpeg")
@@ -39,6 +52,16 @@ rm(ls())
 
 set.seed(XXX)
 #Nos ayuda a reproducir los mismos datos random. Se tiene que cargar antes de hacer otras operaciones y calculos.
+```
+
+WEB SCRAPPING
+
+```{r}
+url <- "https://www.worldometers.info/coronavirus/"
+tabla <- url %>%
+  read_html() %>% 
+  html_table()%>%.[[1]]
+#Ayuda a extraer tablas de internet. RVEST.
 ```
 
 
@@ -62,6 +85,13 @@ X <- rnorm(length(X), mean = 10, sd = 100)
 COLUMNAS Y FILAS
 
 ```{r}
+data[c(14,15)]=NULL
+#Eliminar variables
+
+first_row_vector = as.character(ForLabels[1, ])
+ASE_2_Incompleta <- labelled::set_variable_labels(DataP1, .labels = first_row_vector)
+#Se extrae toda la primera fila como un objeto de varios string. Luego, con la función set_varaible_labels podemos usar este objeto para poner esa primera fila como labels de las columnas.
+
 data[,c(1,4,6:9,10,14,16:22)]
 #Seleccionar filas. Con este código también podemos eliminar los elementos especificados con NULL o poniendo un "-" antes de la c.
 
@@ -77,6 +107,12 @@ panPRIMERO$I601Z2 <- rowSums(panPRIMERO[,c("I601B2", "I601D2")], na.rm=TRUE)
 data <- data %>%
   adorn_totals("row")
 #Agregar fila o columna de total al dataframe. JANITOR.
+
+INSUMOGraf <- clean_names(INSUMOGraf)
+#pones los nombres de las varaibles de tal manera que sean entendibles por R. JANITOR.
+
+data$var = replace(data$var, data$var == "5) Otras tecnologías", "5) Otras Tecnologías")
+#reemplazar valores de una columna con otros valores
 ```
 
 
@@ -88,10 +124,13 @@ which(is.na(data$variable))
 
 data <- na.omit(data)
 #Eliminar NAs de una base
+
+ASE$premergeNEotro[ASE$P191_1 == 1 | ASE$P191_1 == 2] <- NA
+#Reemplazar con NA en base a criterios de otras variables
 ```
 
 
-ELIMINACIÓN A REEMPLAZO DE CARACTERES
+ELIMINACIÓN, REEMPLAZO Y MODIFICACIÓN DE CARACTERES
 
 ```{r}
 X20XXpan$P601A =trimws(X20XXpan$P601A,which=c("left"),whitespace = "[\\h\\v]")
@@ -103,6 +142,12 @@ MiembroFamilia$UBIGEO <- gsub("[[:space:]]","0",MiembroFamilia$VIVIENDA)
 data[]<-lapply(data, function(x) 
   (gsub("\\Ñ|\\+", "", (x))))
 #Igual que el anterior. Para reemplazar ciertos tipos de caracteres (puede ser más de uno) con otro caracter mediante una función de R (creada con el comando function). Además, es necesario que el nombre del data frame tenga los [] puestos ya que indica que la función se aplicará a todas las columnas. En la segunda linea creamos la función.
+
+data$var<-parse_number(data$var)
+#Limpia las varaibles numéricas para que sean intelegibles para R. READR.
+
+varia19$`2020`<-round(varia19$`2020`, digits=1)
+#Redondear valores de la columna segun el decimal elegido
 ```
 
 
@@ -114,6 +159,9 @@ X2021TODO01P1$P601B <- as.factor(X2021TODO01P1$P601B)
 categoricals=c("SEX","RACE","SES","SCTYP","HSP","CAR")
 data[,categoricals]=lapply(data[,categoricals], as.factor)
 #Convertir variable a factor. La segunda opción permite escoger mayor cantidad de variables primero convirtiendolas en un objeto de selección. Intentar sin la coma dentro del paréntesis y ver si con solo el número de la columan se puede aplicar.
+
+data[,c(7:8)]=sapply(data[,c(7:8)], haven::as_factor)
+#Convertir variables seleccionadas a factor con haven, posibilitando que las etiquetas de variable. HAVEN.
 
 data[,c(3:15)] <- sapply(data[c(3:15)],as.numeric)
 #Convertir una variable a numerica seleccionando las columnas
@@ -143,6 +191,37 @@ hsb$SES=ordered(hsb$SES,
                 levels=c(1,2,3),
                 labels=c("Low","Medium","High" ))
 #Lo mismo que lo anterior pero para factores ordenados
+
+data1<-
+  data %>% 
+  mutate(sexo = case_when(P10_1 == 1 ~ "Hombre"| P10_1 == 0 ~ "Hombre", 
+                          TRUE ~ "Mujer"),
+         edad = case_when(P11_1 < 30 ~ "18-29",
+                          P11_1 >= 30 & P11_1 < 45 ~ "30-44", 
+                          TRUE ~ "45-70"),
+         var1 = var,
+         var2 = factor(case_when(var1 == "LAMBAYEQUE" | var1 == "PIURA"  ~ "Norte",
+                                 var1 == "AREQUIPA" | var1 == "TACNA"  ~ "Sur", 
+                                 var1 == "ANCASH" | var1 == "JUNIN"  ~ "Centro", 
+                                 var1 == "LORETO" | var1 == "UCAYALI"  ~ "Oriente", 
+                                 var1 == "LIMA" | var1 == "CALLAO" ~ "Lima/ Callao",
+                                 TRUE ~ "NS/NR"),
+                       levels = c("Norte", "Sur", "Centro", "Oriente", "Lima/Callo", "NS/NR")),
+         var3.1 = as.numeric(data$var3),
+         var4.1 = case_when(as.numeric(var4) == 1~ 3.5,TRUE~0), #TRUE significa el resto de las opciones
+         var5.1 = case_when(as.numeric(var5) == 1~ 7.5,TRUE~0),
+         var6.1 = case_when(as.numeric(var6) == 1~ 2.5,TRUE~0),
+
+         across(c(var7, var8, var9, var10), 
+           ~ factor(case_when(
+             . == 1 ~ "Sí se justifica", #punto significa todos los del across
+             . == 2 ~ "No se justifica", 
+             . == 8 | . == 9 ~ "NS/NR", 
+             TRUE ~ "NS/NR"))),
+             
+             levels = c("Sí se justifica", "No se justifica", "NS/NR"))
+ # Código para modificar varias variables a la vez. Se puede añadir etiquetas a las opciones de las variables. También se pueden crear nuevas variables en base a condiciones transformándolas a factor o también se puede convertir variables a numérica. DPLYR.        
+                       
 ```
 
 
@@ -154,16 +233,28 @@ X2006TODO01 = X20XXpan[grep("01..", X20XXpan$P601A, perl=TRUE),]
 
 panPRIMERO <- panPRIMERO %>%
   filter(P601B == 1)
-#Para filtrar segun los valores de una columna
+#Para filtrar según los valores de una columna
 
 PANxFAM$var2=substr(PANxFAM$var1, 1, 2)
-#Para extraer los caracteres 1 y 2 de un string y ponerlos en otra columna
+#Para extraer los caracteres 1 y 2 de un string y ponerlos en otra columna. BASE.
+
+dataPUNKU$Año=str_split(string = dataPUNKU$Mes,
+                        pattern = "-",
+                        simplify = T)[,2]
+dataPUNKU$Mes=str_split(string = dataPUNKU$Mes,
+                        pattern = "-",
+                        simplify = T)[,1]
+#Divide un string en dos partes (divide columnas en dos) según el pattern que se especifique. El "2" significa que se jalará lo que esté a la derecha del pattern, y el "1" lo contrario. STRINGR.
 ```
 
 
-DISPLAY DE TABLAS  O DATA SEGÚN CRITERIOS
+DISPLAY DE TABLAS  O DATA (SUBSETS) SEGÚN CRITERIOS
 
 ```{r}
+table(data[with(data, VotoxMujer == 1),]$P107_1, useNA = "ifany")
+table(data[with(data, P191_1 == 1 | P191_1 == 2),]$P192_1, useNA = "ifany")
+#Hacer una tabla de una variable basada en un subset que se crea a partir de condiciones de las otras variables.
+
 panPRIMERO[with(panPRIMERO, is.na(I601B2) & is.na(I601D2)),] 
 
 panPRIMERO %>%
@@ -172,6 +263,10 @@ panPRIMERO %>%
 
 MiembroFamAGGRE = aggregate(P204 ~ CONGLOME + VIVIENDA + HOGAR, data = MiembroFamFILTR,sum)
 #Para crear una tabla que haga un calculo estadistico (suma, media, variación, etc.) a una variable que se pone primero (en el código) y luego se ordena en el output en base a las demas variables especificadas.
+
+data%>%
+  rmarkdown::paged_table()
+#Hacer una tabla en base a un database. MAGRITTR.
 ```
 
 
@@ -184,6 +279,11 @@ PANxFAM$DomEstr = ifelse(PANxFAM$DOM3 == "1" & PANxFAM$ESTRATO2 == "1", 1,
 
 PANxFAM$DOM3 = ifelse(PANxFAM$DOMINIO == "Sierra Centro" | PANxFAM$DOMINIO == "Sierra Sur", 2,0)
 #Condicionante "O" de ifelse
+
+ES$NIVEL = ifelse(ES$C_MINSA %in% c("I-2","I-3","I-4"),1,
+                  ifelse(ES$C_MINSA %in% c("II-1","II-2","II-E"),2,
+                         ifelse(ES$C_MINSA %in% c("III-1","III-2","III-E"),3,"Otro")))
+#En ves de poner "==" tambien se puede usar el comando "%in%" con un "c()"
 ```
 
 
@@ -191,7 +291,10 @@ MERGE Y PROBLEMAS RELACIONADOS AL MERGE
 
 ```{r}
 PANxFAM=merge(PANxFAM, Base100, by = c("CONGLOME", "VIVIENDA", "HOGAR", "UBIGEO", "ESTRATO"))
-#hacer merge de bases según varias columnas, también se puede usar argumentos como all.x, all.y, by.x, by.y
+#Hacer merge de bases según varias columnas, también se puede usar argumentos como all.x, all.y, by.x, by.y
+
+dataFinal <- left_join(x = dataA, y = dataB, by = "col4")
+#Hacer merge de bases segun una variable (o varias). Sin embargo, este código si nos permite mantener los labels de las variables, algo que el merge normal no permite.
 
 setdiff(PANxFAM,PANxFAM1)
 #Para comprobar que filas hay en una base de datos que no hay en otra. Columnas deben ser iguales. DPLYR.
@@ -229,6 +332,10 @@ datoC <-
         statistic = list(all_continuous() ~ "{mean} ({sd})"), 
         digits = list(all_continuous() ~ c(2, 2)), missing = "no"))
 #Parte del paquete gtsummary nos permite crear una tabla estratificada por una categoria superior y otra por la cual se divide, además de permitirnos cruzar con otras variables. SURVEY. GTSUMMARY.
+
+datoA <- ddply(PANxFAM,~DomEstr,summarise,  
+              Media=wtd.mean(ConsumPerCap, FACTOR07, na.rm=T)) #función weighted mean de hmisc
+#Hacer una nueva base de datos con columnas ponderadas según estimado estadístico (buscar más con "??wtd.mean"). HMISC. PLYR.
 ```
 
 
@@ -279,32 +386,75 @@ GRÁFICOS
 
 ```{r}
 fig <- plot_ly(dataCASOSACU, type = 'scatter', mode = 'lines', stackgroup = 'one')%>%
-  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'rgb(247,247,247)', width = 4))%>%
-  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'rgb(37,37,37)', width = 4))%>%
+  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'RGB(247,247,247)', width = 4))%>%
+  add_trace(x = ~Date, y = ~valor, name = 'Variable', line = list(color = 'RGB(37,37,37)', width = 4))%>%
   layout(showlegend = T)
-#Para crear gráficos de linea de dos variables con leyenda. PLOTLY.
+
+fig <- plot_ly(data, x = ~fecha, y = ~var1, name = 'RURAL', type = 'scatter', mode = 'lines', 
+               line = list(color = 'rgb(205, 12, 24)', width = 4)) 
+fig <- fig %>% add_trace(y = ~ va2, name = 'URBANO', type = 'scatter', mode = 'lines',
+                         line = list(color = 'rgb(0,100,0)', width = 4))%>%
+
+#Para crear gráficos de LINEA de dos variables con leyenda y sin leyenda. PLOTLY.
 
 fig1 <- plot_ly(y = dataP$survey_mins1, name = "TRACE 0",  type = "box") %>%
   add_trace(y = dataP$`QUEJAS/survey_mins4`, name = "TRACE 1",  type = "box" ) %>%
-#Para crear gráficos de caja de una varaible. PLOTLY.
+#Para crear gráficos de CAJA de una variable. Y es para que sea vertical y X para horizontal. PLOTLY.
   
 fig <- fig %>% layout(yaxis = list(title = 'Muertes de Covid-19 (a 11 de Agosto 2022)'))
 fig <- fig %>% layout(xaxis = list(title = 'Fecha'))
 fig <- fig %>% layout(showlegend = TRUE, legend = list(font = list(size = 15)))
-#Complemento del anterior. También puede ser insertado dentro del código anterior. Para poner títulos a las axis y editar el layout de la leyenda. PLOTLY.
+#Complemento para gráficos. También puede ser insertado dentro del código anterior. Para poner títulos a las axis y editar el layout de la leyenda. PLOTLY.
+
+layout(xaxis = list(title = 'año', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = T
+                     ),
+       yaxis = list(title = 'Dominio', linecolor="#BCCCDC",
+                      zeroline = F,
+                      showgrid = F,
+                      range = c(0,100)
+                      ))
+#Modificación del layout para el grid de los gráficos. Generalmente al final. PLOTLY.
 
 fig <- fig %>% layout(autosize = F, width = 900, height = 500)
 #Complemento que nos ayuda a dar forma al lienzo del plot. PLOTLY.
 
 fig <- fig %>% layout(barmode = "overlay")
-#Usado para grafico de barras superpuestas o histogramas. Generalmente al final del plot.
+#Usado para gráfico de barras superpuestas o HISTOGRAMAS Generalmente al final del plot.PLOTLY.
   
 fig1 <- plot_ly(alpha = 0.7) %>% 
 #Usado en graficos superpuestos para ver la intensidad del color. Al principio del plot. PLOTLY.
   
+OWIDtablasCASOS <- OWIDtablasCASOS %>% 
+  mutate(highlgt = ifelse(Ranking == 54 | Ranking == 66 | Ranking == 72, "rgb(255, 255, 97)",
+                          ifelse(Ranking == 103, "rgb(252, 113, 104)", "white"))) #seleccionamos el color por condicion
+
+fig <- plot_ly(type = 'table',
+               columnwidth = c(80,60,60,60,30),
+               columnorder = c(0,1,2,3,4), #señalamos el orden en el que se presentaran las variables
+               header = list(values = c("País","Casos Totales", "Casos por Millón", "Población","Ranking"), #títulos
+                             align = c("left", "center"), #alineacion de las columnas
+                             line = list(width = 1, color = 'black'), #color de la linea del heather
+                             fill = list(color = c("grey", "grey")), #relleno de color del heather
+                             font = list(family = "Arial", size = 14, color = "white")), #tamaño de las letra del heather
+               
+               cells = list(values = rbind(OWIDtablasCASOS$location, 
+                                           OWIDtablasCASOS$total_cases, 
+                                           OWIDtablasCASOS$total_cases_per_million, 
+                                           OWIDtablasCASOS$population,
+                                           OWIDtablasCASOS$Ranking), #señalamos las columnas que seránn utilizadas
+                            align = c("left", "center"), #alineación de las celdas
+                            line = list(color = "black", width = 1), #color de las lineas de la celda
+                            font = list(family = "Arial", size = 12, color = c("black")), #tamaño de letra de las celdas
+                            fill = list(color = list(OWIDtablasCASOS$highlgt)))) #parametro de tabla modificado 
+#Código para hacer tablas que puedan tener centrado, color para las columnas deseadas. Con ancho, orden y tipo de letra especificado. PLOTLY.
+  
 plot(X, y, col='deepskyblue4', xlab='X label', main='Datos & DGM')
-#Nos da un gráfico de puntos (plots), se puede cambiar el nombre de la variable y el título
+#Nos da un gráfico de PUNTOS (plots), se puede cambiar el nombre de la variable y el título.
 
 lines(X, y, col='firebrick1', lwd=4) #DGM in red  
-#Nos da un gráfico de linrs, se puede cambiar el nombre de la variable y especificar el ancho de la línea.
+#Nos da un gráfico de LINEAS, se puede cambiar el nombre de la variable y especificar el ancho de la línea.
+
+
 ```

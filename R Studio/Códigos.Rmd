@@ -54,6 +54,16 @@ set.seed(XXX)
 #Nos ayuda a reproducir los mismos datos random. Se tiene que cargar antes de hacer otras operaciones y calculos.
 ```
 
+CAMBIAR EL COLOR DE LETRA EN OUTPUT
+```{r}
+<span style="color: red;">textO</span>
+#Cambia el color del texto que se encuestra en medio. Para output HTML.
+  
+texto\textcolor{red}{texto}
+#Cambia el color del texto que se encuestra en medio. Para output PDF.
+```
+
+
 WEB SCRAPPING
 
 ```{r}

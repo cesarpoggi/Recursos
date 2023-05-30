@@ -180,7 +180,13 @@ data$fecha <- as.Date(data$fecha, '%d/%m/%Y')
 #Convertir una variable a formato fecha
 
 label(X2021TODO01P1$P601B) = c("Obtuvo el producto")
-#Cambiar la etiqueta de una variable
+#Cambiar la etiqueta de una variable. LABELLED.
+
+var_label(Empleadores_UPAO$ARCH) <- "value"
+#Cambiar la etiqueta de una variable. LABELLED.
+
+var_labels(sexo = "Sexo")
+#Cambiar la etiqueta de una variable. SJLABELLED.
 ```
 
 

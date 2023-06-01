@@ -32,7 +32,7 @@ fromGit = B20XX
 load(url(fromGit))
 #Cargar data desde GitHub para rda
 
-fromGit <- C2021 
+fromGit <- "C2021.com/fdjgsgjnb"
 Base100 = read_sav(fromGit)
 #Cargar data desde GitHub para sav
 

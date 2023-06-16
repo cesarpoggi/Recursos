@@ -137,6 +137,9 @@ data <- na.omit(data)
 
 ASE$premergeNEotro[ASE$P191_1 == 1 | ASE$P191_1 == 2] <- NA
 #Reemplazar con NA en base a criterios de otras variables
+
+PP_FULL$tipo_orgn <- replace(PP_FULL$tipo_orgn, PP_FULL$tipo_orgn=='', NA)
+#Reemplazar celdas vacias por NA
 ```
 
 
